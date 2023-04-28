@@ -39,10 +39,10 @@ object MainApp extends ZIOAppDefault:
       .catchAll(e => Console.printLineError(e.getMessage()))
       .ignore
 
-  def producerLayer(config: KafkaConfig) =
+  def producerLayer =
     ZLayer.scoped(
       Producer.make(
-        settings = ProducerSettings(List(config.hostname))
+        settings = ProducerSettings(List("kafka:29092"))
           .withProperties(Map(
             AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG -> "http://schema-registry:8081"
           ))
@@ -69,8 +69,6 @@ object MainApp extends ZIOAppDefault:
       }
 
   override def run =
-    for {
-      config <- ZIO.config(KafkaConfig.config).withConfigProvider(ConfigProvider.envProvider.upperCase)
-      _ <- Console.printLine(s"Hostname is: " ++ config.hostname)
-      _ <- Server.serve(app).provide(producerLayer(config), Server.defaultWithPort(8090))
-    } yield ()
+    Server
+      .serve(app)
+      .provide(producerLayer, Server.defaultWithPort(8090))
