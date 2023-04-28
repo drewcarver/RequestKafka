@@ -1,0 +1,7 @@
+{
+  "type": "record",
+  "name": "RequestAvroModel",
+  "fields": [
+    {"name": "id", "type": "long"}
+  ]
+}

@@ -1,0 +1,13 @@
+FROM sbtscala/scala-sbt:eclipse-temurin-jammy-8u352-b08_1.8.2_2.12.17
+
+# Set the working directory to /app
+WORKDIR /app
+
+# Copy the project files into the container at /app
+COPY . /app
+
+# Compile the application
+RUN sbt compile
+
+# Specify the command to run when the container starts
+CMD ["sbt", "run"]
