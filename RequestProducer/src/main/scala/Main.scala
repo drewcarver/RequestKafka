@@ -20,10 +20,9 @@ import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig
 object MainApp extends ZIOAppDefault:
   case class RequestModel(id: Long) 
 
-  object RequestModel {
+  object RequestModel: 
     implicit val decoder: JsonDecoder[RequestModel] = DeriveJsonDecoder.gen[RequestModel]
     implicit val encoder: JsonEncoder[RequestModel] = DeriveJsonEncoder.gen[RequestModel]
-  }
 
   val avroSerializer = new KafkaAvroSerializer()
   avroSerializer.configure(Map("schema.registry.url" -> "http://schema-registry:8081", "specific.avro.reader" -> true).asJava, false)
@@ -39,7 +38,7 @@ object MainApp extends ZIOAppDefault:
       .catchAll(e => Console.printLineError(e.getMessage()))
       .ignore
 
-  def producerLayer =
+  val producerLayer =
     ZLayer.scoped {
       for {
         config    <- ZIO.config(KafkaConfig.config)

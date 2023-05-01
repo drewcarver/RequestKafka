@@ -36,14 +36,17 @@ object MainApp extends ZIOAppDefault:
       .mapZIO(_.commit)
       .drain
 
-  def consumerLayer(config: KafkaConfig) =
-    ZLayer.scoped(
-      Consumer.make(
-        ConsumerSettings(List(config.hostname))
-          .withProperties(KAFKA_PROPERTIES)
-          .withGroupId("group")
-      )
-    )
+  val consumerLayer =
+    ZLayer.scoped {
+      for {
+        config <- ZIO.config(KafkaConfig.config)
+        consumer <- Consumer.make(
+          ConsumerSettings(List(config.hostname))
+            .withProperties(KAFKA_PROPERTIES)
+            .withGroupId("group")
+        )
+      } yield consumer
+    }
 
   final case class KafkaConfig(username: String, hostname: String, password: String)
   object KafkaConfig:
@@ -53,10 +56,6 @@ object MainApp extends ZIOAppDefault:
       }
 
   override def run =
-    for {
-      config <- ZIO.config(KafkaConfig.config).withConfigProvider(ConfigProvider.envProvider.upperCase)
-      _ <- Console.printLine(s"Hostname is: " ++ config.hostname)
-      _ <- consumer
-        .runDrain
-        .provide(consumerLayer(config))
-    } yield ()
+    consumer
+      .runDrain
+      .provide(consumerLayer)
