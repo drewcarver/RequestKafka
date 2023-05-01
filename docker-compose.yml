@@ -59,6 +59,10 @@ services:
     networks:
       - kafka-network
     image: consumer:latest
+    environment:
+      HOSTNAME: kafka:29092
+      USERNAME: foo
+      PASSWORD: bar
   
 networks:
   kafka-network:

@@ -40,14 +40,17 @@ object MainApp extends ZIOAppDefault:
       .ignore
 
   def producerLayer =
-    ZLayer.scoped(
-      Producer.make(
-        settings = ProducerSettings(List("kafka:29092"))
-          .withProperties(Map(
-            AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG -> "http://schema-registry:8081"
+    ZLayer.scoped {
+      for {
+        config    <- ZIO.config(KafkaConfig.config)
+        producer  <- Producer.make(
+          settings = ProducerSettings(List(config.hostname))
+            .withProperties(Map(
+              AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG -> "http://schema-registry:8081"
           ))
-      )
-    )
+        )
+      } yield producer
+    }
 
   val app: HttpApp[Producer, Nothing] = Http.collectZIO[Request] {
     case req@Method.POST  -> !! / "request"  => {
@@ -68,7 +71,6 @@ object MainApp extends ZIOAppDefault:
         case (username, hostname, password) => KafkaConfig(username, hostname, password)
       }
 
-  override def run =
-    Server
-      .serve(app)
+  override def run = 
+    Server.serve(app)
       .provide(producerLayer, Server.defaultWithPort(8090))
